@@ -1,0 +1,18 @@
+let BrowserKB =
+    DeviceTvmSoftwareVulnerabilitiesKB
+    | where isnotempty(AffectedSoftware)
+    | mv-expand s = AffectedSoftware
+    | where s has_any ("Chrome","Edge","Firefox","Brave","Opera","Duck","Chromium","Safari","WebView2")
+    | project CveId;
+    let DeviceBrowser =
+    DeviceTvmSoftwareVulnerabilities
+    | where CveId in (BrowserKB)
+    | summarize CVEList = make_set(CveId, 10), VulnerabilityCount = dcount(CveId) by DeviceId;
+let Devices =
+    DeviceInfo
+    | summarize LastSeen = arg_max(Timestamp, *) by DeviceId
+    | project DeviceId, DeviceName, OSPlatform, LastSeen;
+Devices
+| join kind=inner DeviceBrowser on DeviceId
+| project DeviceName, OSPlatform, LastSeen, VulnerabilityCount, CVEList
+| order by OSPlatform, ExploitAvailable, VulnerabilityCount desc
