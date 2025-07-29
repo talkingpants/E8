@@ -1,0 +1,43 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body  { font-family: Arial, sans-serif; }
+    table { border-collapse: collapse; border: 1px solid black; width: 100%; }
+    th,td{ border:1px solid black; padding:6px 8px; font-size: 13px; }
+    th:nth-child(even),td:nth-child(even) {background-color: #D6EEEE;}
+  </style>
+</head>
+<body>
+  <!--INSTRUCTIONS-->
+  <p><strong>E8 ML1-PA-04 - PDF software vulnerabiltiy check - weekly</strong><br>
+A vulnerability scanner is used <strong>at least weekly</strong> to identify missing patches or 
+updates for vulnerabilities in office productivity suites, web browsers and 
+their extensions, email clients, <strong>PDF software</strong>, and security products.
+ <p>Devices listed below were identified as having outstanding vulnerabilities in PDF software(max 10 CVEids shown). 
+ Further details available in the <a href=https://security.microsoft.com/vulnerability-management-inventories/applications>Defender portal</a>. 
+ Close this ticket only after patching all vulnerabilities for PDF software</p>
+  
+  <h2>Devices with PDF software vulnerabilities</h2>
+  
+  <!--REPORT_TABLE-->
+  
+  <p style="font-size:0.8em;color:#888;">Generated on <!--STAMP--></p>
+  
+  <!-- Embed Email Codes into text so that it can be parsed by Manage Engine Service Desk Plus -->
+  <p style="font-size:0.1em;color:#FFF">    @@OPERATION=AddRequest@@
+    @@CATEGORY=Cyber Security@@
+    @@SUBCATEGORY=Compliance activities@@
+    @@GROUP=ICT Security@@
+    @@PRIORITY=P4 - Medium@@
+    @@URGENCY=U2 - High@@
+    </p>
+   
+   <!-- Embed codes in div for ticket systems that can read hidden html elements -->
+   <div style="display:none">
+    e.g. @@OPERATION=AddRequest@@
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,43 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body  { font-family: Arial, sans-serif; }
+    table { border-collapse: collapse; border: 1px solid black; width: 100%; }
+    th,td{ border:1px solid black; padding:6px 8px; font-size: 13px; }
+    th:nth-child(even),td:nth-child(even) {background-color: #D6EEEE;}
+  </style>
+</head>
+<body>
+  <!--INSTRUCTIONS-->
+  <p><strong>E8 ML1-PA-01 - Onboard assets</strong><br>
+An automated method of asset discovery is used at least fortnightly to 
+support the detection of assets for subsequent vulnerability scanning 
+activities.
+ <p>Devices listed below have been detected and need to be onboarded for vulnerabiltiy scanning. 
+ Further details available in the <a href=https://security.microsoft.com/machines?category=all-devices>Defender portal</a>. 
+ Close this ticket only after onboarding all identified PSD managed devices.</p>
+  
+  <h2>Devices seen and can be onbaorded</h2>
+  
+  <!--REPORT_TABLE-->
+  
+  <p style="font-size:0.8em;color:#888;">Generated on <!--STAMP--></p>
+  
+  <!-- Embed Email Codes into text so that it can be parsed by Manage Engine Service Desk Plus -->
+  <p style="font-size:0.1em;color:#FFF">    @@OPERATION=AddRequest@@
+    @@CATEGORY=Cyber Security@@
+    @@SUBCATEGORY=Compliance activities@@
+    @@GROUP=ICT Security@@
+    @@PRIORITY=P4 - Medium@@
+    @@URGENCY=U2 - High@@
+    </p>
+   
+   <!-- Embed codes in div for ticket systems that can read hidden html elements -->
+   <div style="display:none">
+    e.g. @@OPERATION=AddRequest@@
+  </div>
+
+</body>
+</html>
