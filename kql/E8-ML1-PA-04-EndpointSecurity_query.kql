@@ -1,0 +1,59 @@
+let KB =
+    DeviceTvmSecureConfigurationAssessmentKB
+    | extend t = strcat(tostring(ConfigurationName), " ", tostring(ConfigurationDescription))
+    | extend Category = case(
+        t has_any ("Defender Antivirus","Microsoft Defender Antivirus") and t has_any ("enabled","turn on","turned on","on"), "AV_Enabled",
+        t has_any ("security intelligence","definitions","signatures","up to date","up-to-date","current"), "AV_UpToDate",
+        t has_any ("Windows Defender Firewall","Defender Firewall") and t has_any ("enabled","turn on","on","is enabled"), "FW_Enabled", "Other")
+    | where Category in ("AV_Enabled","AV_UpToDate","FW_Enabled")
+    | project ConfigurationId, Category;
+let Assess =
+    DeviceTvmSecureConfigurationAssessment
+    | where IsApplicable == true
+    | summarize arg_max(Timestamp, IsCompliant) by DeviceId, ConfigurationId
+    | project DeviceId, ConfigurationId, IsCompliant;
+let Status =
+    Assess
+    | join kind=inner KB on ConfigurationId
+    | summarize
+        DefenderEnabled = max(tolong(iif(Category == "AV_Enabled"  and IsCompliant, 1, 0))) == 1,
+        DefenderUpToDate = max(tolong(iif(Category == "AV_UpToDate" and IsCompliant, 1, 0))) == 1,
+        WindowsDefenderFirewallEnabled = max(tolong(iif(Category == "FW_Enabled" and IsCompliant, 1, 0))) == 1
+      by DeviceId;
+let Devices =
+    DeviceInfo
+    | where OSPlatform startswith "Windows"
+    | summarize arg_max(Timestamp, *) by DeviceId
+    | project DeviceId, DeviceName, OSPlatform;
+let NetIPs =
+    DeviceNetworkInfo
+    | where isnotempty(IPAddresses)
+    | extend IPsDyn = parse_json(IPAddresses)
+    | where isnotnull(IPsDyn)
+    | mv-expand ip = IPsDyn
+    | extend ipstr = tostring(ip.IPAddress)
+    | where isnotempty(ipstr) and ipstr !contains ":"
+    | summarize IPs = make_set(ipstr) by DeviceId;
+let ActiveProfile =
+    DeviceNetworkInfo
+    | summarize arg_max(Timestamp, ConnectedNetworks) by DeviceId
+    | extend cn = parse_json(ConnectedNetworks)
+    | mv-expand e = cn
+    | extend cat = tolower(tostring(coalesce(e.NetworkCategory, e.Category)))
+    | summarize cats = make_set(cat) by DeviceId
+    | extend ActiveProfile = case(
+        set_has_element(cats, "domainauthenticated") or set_has_element(cats, "domain"), "Domain",
+        set_has_element(cats, "private"), "Private",
+        set_has_element(cats, "public") or set_has_element(cats, "guest or public") or set_has_element(cats, "guest/public"), "Public", "Unknown")
+    | project DeviceId, ActiveProfile;
+Devices
+| join kind=leftouter Status on DeviceId
+| join kind=leftouter NetIPs on DeviceId
+| join kind=leftouter ActiveProfile on DeviceId
+| extend DefenderEnabled = coalesce(DefenderEnabled, false)
+| extend DefenderUpToDate = coalesce(DefenderUpToDate, false)
+| extend WindowsDefenderFirewallEnabled = coalesce(WindowsDefenderFirewallEnabled, false)
+| extend ActiveProfile = iif(isempty(ActiveProfile), "Unknown", ActiveProfile)
+| where DefenderEnabled == false or DefenderUpToDate == false or WindowsDefenderFirewallEnabled == false or ActiveProfile == "Unknown"
+| project DeviceName, OSPlatform, IPs, DefenderEnabled, DefenderUpToDate, WindowsDefenderFirewallEnabled, ActiveProfile
+| order by OSPlatform, DeviceName asc

@@ -1,0 +1,26 @@
+let OfficeKB =
+    DeviceTvmSoftwareVulnerabilitiesKB
+    | mv-expand AffectedSoftware
+    | where AffectedSoftware has "Office"
+    | project CveId, IsExploitAvailable;
+let OfficeVulnsPerDevice =
+    DeviceTvmSoftwareVulnerabilities
+    | join kind=inner OfficeKB on CveId
+    | summarize
+        CVEList            = make_set(CveId, 10),
+        VulnerabilityCount = dcount(CveId),
+        ExploitAvailable   = max(toint(IsExploitAvailable)) == 1
+      by DeviceId;
+let Devices =
+    DeviceInfo
+    | summarize LastSeen = arg_max(Timestamp, *) by DeviceId
+    | project DeviceId, DeviceName, OSPlatform, LastSeen;
+Devices
+| join kind=inner OfficeVulnsPerDevice on DeviceId
+| project DeviceName,
+          OSPlatform,
+          LastSeen,
+          VulnerabilityCount,
+          ExploitAvailable,
+          CVEList
+| order by OSPlatform, ExploitAvailable, VulnerabilityCount desc

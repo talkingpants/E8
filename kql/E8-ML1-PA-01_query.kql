@@ -1,0 +1,16 @@
+﻿let devices = 
+    DeviceInfo
+    | where OnboardingStatus == "Can be onboarded"
+          and IsExcluded == false
+    | summarize LastSeen = arg_max(Timestamp, *) by DeviceId
+    | project DeviceId, DeviceName, OSPlatform, LastSeen;
+let net = 
+    DeviceNetworkInfo
+    | extend IPsDynamic = parse_json(IPAddresses)
+    | mv-expand IPEntry = IPsDynamic
+    | project DeviceId, IP = tostring(IPEntry.IPAddress)
+    | summarize IPs = make_set(IP) by DeviceId;
+devices
+| join kind=leftouter net on DeviceId
+| project DeviceName, OSPlatform, IPs, LastSeen
+| order by OSPlatform, LastSeen desc

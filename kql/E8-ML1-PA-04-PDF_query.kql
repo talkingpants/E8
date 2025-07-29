@@ -1,0 +1,18 @@
+let PdfKB =
+    DeviceTvmSoftwareVulnerabilitiesKB
+    | where isnotempty(AffectedSoftware)
+    | mv-expand s = AffectedSoftware
+    | where s has_any ("Acrobat","Acrobat Reader","Adobe Reader","Adobe Acrobat","Acrobat DC","Reader DC","Acrobat Reader DC","Acrobat Pro","Acrobat Pro DC")
+    | project CveId, IsExploitAvailable;
+let PdfVulnsPerDevice =
+    DeviceTvmSoftwareVulnerabilities
+    | join kind=inner PdfKB on CveId
+    | summarize CVEList = make_set(CveId, 10), VulnerabilityCount = dcount(CveId), ExploitAvailable = max(toint(IsExploitAvailable)) == 1 by DeviceId;
+let Devices =
+    DeviceInfo
+    | summarize LastSeen = arg_max(Timestamp, *) by DeviceId
+    | project DeviceId, DeviceName, OSPlatform, LastSeen;
+Devices
+| join kind=inner PdfVulnsPerDevice on DeviceId
+| project DeviceName, OSPlatform, LastSeen, VulnerabilityCount, ExploitAvailable, CVEList
+| order by OSPlatform, ExploitAvailable, VulnerabilityCount desc
