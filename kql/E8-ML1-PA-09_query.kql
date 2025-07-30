@@ -1,0 +1,16 @@
+let InternetFacingDevices =
+    DeviceInfo
+    | where IsInternetFacing != true
+    | summarize arg_max(Timestamp, *) by DeviceId
+    | project DeviceId, DeviceName, OSPlatform;
+DeviceTvmSoftwareInventory
+| where EndOfSupportStatus == "EOS Version"
+| project DeviceId, SoftwareVendor, SoftwareName, SoftwareVersion, EndOfSupportDate
+| join kind=inner InternetFacingDevices on DeviceId
+| project
+    DeviceName,
+    OSPlatform,
+    SoftwareVendor,
+    SoftwareName,
+    SoftwareVersion,
+    EndOfSupportDate = format_datetime(EndOfSupportDate, 'yyyy-MM-dd')
