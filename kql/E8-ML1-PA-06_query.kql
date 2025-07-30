@@ -1,0 +1,30 @@
+let InternetFacingDevices =
+    DeviceInfo
+    | where IsInternetFacing == true
+    | summarize arg_max(Timestamp, *) by DeviceId
+    | project DeviceId, DeviceName, OSPlatform;
+let DeviceVulns =
+    DeviceTvmSoftwareVulnerabilities
+    | project DeviceId, CveId, Severity = VulnerabilitySeverityLevel;
+let OsTokens = dynamic(["windows","macos","linux","ubuntu","debian","centos","rhel","suse","sles","fedora","android","ios","ipados","chromeos"]);
+let CveMeta =
+    DeviceTvmSoftwareVulnerabilitiesKB
+    | where isnotnull(PublishedDate)
+    | where IsExploitAvailable == false and VulnerabilitySeverityLevel != "Critical"
+    | where isnotempty(AffectedSoftware)
+    | mv-expand s = AffectedSoftware
+    | extend s_l = tolower(tostring(s))
+    | where isnotempty(s_l)
+    | where not( s_l has_any (OsTokens) or s_l contains "windows server" or s_l contains "os x" or s_l contains "chrome os" )
+    | summarize PublishedDate = min(PublishedDate) by CveId;
+InternetFacingDevices
+| join kind=inner DeviceVulns on DeviceId
+| join kind=inner CveMeta     on CveId
+| where Severity !in ("Critical")
+| summarize
+    VulnCount      = dcount(CveId),
+    CriticalCount  = dcountif(CveId, Severity == "Critical"),
+    OldestVulnDate = format_datetime(min(PublishedDate), 'yyyy-MM-dd'),
+    VulnList       = make_list(CveId, 10)
+  by DeviceName, OSPlatform
+| order by VulnCount desc, OldestVulnDate asc

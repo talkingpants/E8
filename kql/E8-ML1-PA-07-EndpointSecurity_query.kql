@@ -1,0 +1,24 @@
+DeviceTvmInfoGathering
+| where isnotempty(AdditionalFields)
+| extend af = parse_json(AdditionalFields)
+| extend
+    AvEngineVersion = tostring(af.AvEngineVersion),
+    AvSignatureVersion = tostring(af.AvSignatureVersion),
+    AvPlatformVersion = tostring(af.AvPlatformVersion),
+    AvEngineUpdateTime = todatetime(af.AvEngineUpdateTime),
+    AvSignatureUpdateTime = todatetime(af.AvSignatureUpdateTime),
+    AvPlatformUpdateTime = todatetime(af.AvPlatformUpdateTime)
+| where AvEngineUpdateTime <= ago(14d)
+   or AvSignatureUpdateTime <= ago(14d)
+   or AvPlatformUpdateTime <= ago(14d)
+| summarize arg_max(Timestamp, *) by DeviceId
+| project
+    DeviceName,
+    OSPlatform,
+    AvEngineVersion,
+    AvEngineUpdateTime = format_datetime(AvEngineUpdateTime, 'yyyy-MM-dd'),
+    AvSignatureVersion,
+    AvSignatureUpdateTime = format_datetime(AvSignatureUpdateTime, 'yyyy-MM-dd'),
+    AvPlatformVersion,
+    AvPlatformUpdateTime = format_datetime(AvPlatformUpdateTime, 'yyyy-MM-dd')
+| order by OSPlatform, AvSignatureUpdateTime, DeviceName
