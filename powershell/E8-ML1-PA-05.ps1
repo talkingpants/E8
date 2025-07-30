@@ -34,7 +34,7 @@ if ($result.Results.Count -gt 0) {
     # send email only when there are results (your change was correct)
     $stamp   = (Get-Date).ToString('yyyy-MM-dd')
     $bodyHtml = $template -replace '<!--REPORT_TABLE-->', $htmlTable -replace '<!--STAMP-->', $stamp
-    Send-MailMessage -To $mailTo -From $mailFrom -Subject "E8-ML1-PA-05 Critical/Exploited Vulns (48h) - $stamp @@@" -Body $bodyHtml -BodyAsHtml -SmtpServer $smtp
+    Send-MailMessage -To $mailTo -From $mailFrom -Subject "E8-ML1-PA-05 Internet-facing Critical/Exploited Vulns older than 48h - $stamp @@@" -Body $bodyHtml -BodyAsHtml -SmtpServer $smtp
 }
 else {
     Write-Host 'No findings. Email not sent.'
