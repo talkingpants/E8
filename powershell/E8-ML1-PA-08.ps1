@@ -1,11 +1,11 @@
-﻿# E8-ML1-PA-05.ps1
+﻿# E8-ML1-PA-08.ps1
 
 . (Join-Path $PSScriptRoot 'E8-config.ps1')
 . (Join-Path $PSScriptRoot 'E8-Defender_auth.ps1')
 
 $headers = Get-MDATPAuthHeader -TenantId $tenantId -ClientId $clientId -ClientSecret $secret
 
-$kqlPath = Join-Path $PSScriptRoot 'E8-ML1-PA-05_query.kql'
+$kqlPath = Join-Path $PSScriptRoot 'E8-ML1-PA-08_query.kql'
 if (-not (Test-Path $kqlPath)) { throw "Query file not found: $kqlPath" }
 
 $query = Get-Content -Path $kqlPath -Raw
@@ -21,25 +21,19 @@ if ($result.Results.Count -gt 0) {
     $rows = $result.Results | Sort-Object OSPlatform, DeviceName
 
     $htmlTable = $rows |
-        Select-Object `
-            DeviceName, `
-            OSPlatform, `
-            VulnCount, `
-            CriticalCount, `
-            @{Name='OldestVulnDate'; Expression = { $_.OldestVulnDate }}, `
-            @{Name='CVEs';          Expression = { ($_.VulnList -join ', ') }} |
+        Select-Object DeviceName, OSPlatform, SoftwareVendor, SoftwareName, SoftwareVersion, EndOfSupportDate |
         ConvertTo-Html -Fragment |
         Out-String
-    
+
     # Inject into template and send
-    $templatePath = Join-Path $PSScriptRoot 'E8-ML1-PA-05_message.html'
+    $templatePath = Join-Path $PSScriptRoot 'E8-ML1-PA-08_message.html'
     if (-not (Test-Path $templatePath)) { throw "Template file not found: $templatePath" }
     $template = Get-Content -Raw -Path $templatePath
 
     # send email only when there are results (your change was correct)
     $stamp   = (Get-Date).ToString('yyyy-MM-dd')
     $bodyHtml = $template -replace '<!--REPORT_TABLE-->', $htmlTable -replace '<!--STAMP-->', $stamp
-    Send-MailMessage -To $mailTo -From $mailFrom -Subject "E8-ML1-PA-05 Internet-facing Critical/Exploited Vulns older than 48h - $stamp @@@" -Body $bodyHtml -BodyAsHtml -SmtpServer $smtp
+    Send-MailMessage -To $mailTo -From $mailFrom -Subject "E8-ML1-PA-08 Internet-facing EOS applications - $stamp @@@" -Body $bodyHtml -BodyAsHtml -SmtpServer $smtp
 }
 else {
     Throw 'No findings. Email not sent.'
