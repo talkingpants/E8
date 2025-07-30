@@ -1,0 +1,23 @@
+let InternetFacingDevices =
+    DeviceInfo
+    | where IsInternetFacing == true
+    | summarize arg_max(Timestamp, *) by DeviceId
+    | project DeviceId, DeviceName, OSPlatform;
+let DeviceVulns =
+    DeviceTvmSoftwareVulnerabilities
+    | project DeviceId, CveId, Severity = VulnerabilitySeverityLevel;
+let CveMeta =
+    DeviceTvmSoftwareVulnerabilitiesKB
+    | project CveId, PublishedDate, IsExploitAvailable;
+InternetFacingDevices
+| join kind=inner DeviceVulns on DeviceId
+| join kind=inner CveMeta     on CveId
+| where PublishedDate <= ago(2d)
+  and (IsExploitAvailable == true or Severity in ("Critical"))
+| summarize
+    VulnCount      = dcount(CveId),
+    CriticalCount  = dcountif(CveId, Severity == "Critical"),
+    OldestVulnDate = format_datetime(min(PublishedDate), 'yyyy-MM-dd'),
+    VulnList       = make_list(CveId, 25)
+  by DeviceName, OSPlatform
+| order by VulnCount desc, OldestVulnDate asc
