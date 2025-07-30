@@ -1,0 +1,76 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body  { font-family: Arial, sans-serif; }
+    table { border-collapse: collapse; border: 1px solid black; width: 100%; }
+    th,td{ border:1px solid black; padding:6px 8px; font-size: 13px; }
+    th:nth-child(even),td:nth-child(even) {background-color: #D6EEEE;}
+  </style>
+</head>
+<body>
+  <!--INSTRUCTIONS-->
+  <p><strong>E8 ML1-PA-07 - Endpoint Security older than 14 days</strong><br>
+<em>Patches, updates or other vendor mitigations for vulnerabilities in office 
+productivity suites, web browsers and their extensions, email clients, PDF 
+software, and <strong>security products</strong> are <strong>applied within two weeks</strong> of release.
+</p></em>
+ <p>Devices listed below were identified as having Defender version and/or security signatures older than 14 days. 
+ Further details available in the <a href=https://security.microsoft.com/vulnerability-management-inventories/applications>Defender portal</a>. 
+ Close this ticket only after remediating the outdated versions.</p>
+  <h3>Devices with Defender versions older than 14d</h3>
+  
+  <!--REPORT_TABLE-->
+  
+  <p style="font-size:0.8em;color:#888;">Generated on <!--STAMP--></p>
+  <br>
+  <table border="1" cellpadding="6" cellspacing="0">
+  <thead>
+    <tr>
+      <th>Component</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>AvEngine</strong></td>
+      <td>The core scanning engine. Handles file scanning, detection, and remediation.</td>
+    </tr>
+    <tr>
+      <td><strong>AvSignature</strong></td>
+      <td>The signature definitions. Contains the actual virus/malware definitions.</td>
+    </tr>
+    <tr>
+      <td><strong>AvPlatform</strong></td>
+      <td>The Defender platform binaries. Includes control logic, features, and telemetry.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Summary:</strong></p>
+<ul>
+  <li><strong>AvEngine</strong> = How threats are scanned</li>
+  <li><strong>AvSignature</strong> = What threats are known</li>
+  <li><strong>AvPlatform</strong> = How the antivirus operates and integrates</li>
+</ul>
+
+<p>Each component updates independently. All should be kept up to date for full protection.</p>
+
+  
+  <!-- Embed Email Codes into text so that it can be parsed by Manage Engine Service Desk Plus -->
+  <p style="font-size:0.1em;color:#FFF">    @@OPERATION=AddRequest@@
+    @@CATEGORY=Cyber Security@@
+    @@SUBCATEGORY=Compliance activities@@
+    @@GROUP=ICT Security@@
+    @@PRIORITY=P4 - Medium@@
+    @@URGENCY=U2 - High@@
+    </p>
+   
+   <!-- Embed codes in div for ticket systems that can read hidden html elements -->
+   <div style="display:none">
+    e.g. @@OPERATION=AddRequest@@
+  </div>
+
+</body>
+</html>
