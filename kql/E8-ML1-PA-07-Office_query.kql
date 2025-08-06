@@ -20,7 +20,7 @@ Devices
 | join kind=inner OfficeVulnsPerDevice on DeviceId
 | project DeviceName,
           OSPlatform,
-          LastSeen,
+          LastSeen = format_datetime(LastSeen, 'yyyy-MM-dd'),
           VulnerabilityCount,
           ExploitAvailable,
           CVEList
