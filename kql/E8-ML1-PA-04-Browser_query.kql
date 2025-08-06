@@ -15,4 +15,4 @@ let Devices =
 Devices
 | join kind=inner DeviceBrowser on DeviceId
 | project DeviceName, OSPlatform, LastSeen, VulnerabilityCount, CVEList
-| order by OSPlatform, ExploitAvailable, VulnerabilityCount desc
+| order by OSPlatform, VulnerabilityCount desc
