@@ -1,21 +1,29 @@
 ﻿# E8-ML1-PA-07-PDF.ps1
-
+# Imports
 . (Join-Path $PSScriptRoot 'E8-config.ps1')
-. (Join-Path $PSScriptRoot 'E8-Defender_auth.ps1')
+Import-Module (Join-Path $PSScriptRoot 'E8-Defender_auth.psm1')
+Import-Module (Join-Path $PSScriptRoot 'E8-Common.psm1')
 
-$headers = Get-MDATPAuthHeader -TenantId $tenantId -ClientId $clientId -ClientSecret $secret
-
-$kqlPath = Join-Path $PSScriptRoot 'E8-ML1-PA-07-PDF_query.kql'
+# Resolve sibling dirs
+$paths = Get-E8Paths -ScriptRoot $PSScriptRoot
+$kqlPath = Join-Path $paths.KqlDir 'E8-ML1-PA-07-PDF_query.kql'
+$templatePath = Join-Path $paths.MsgDir 'E8-ML1-PA-07-PDF_message.html'
 if (-not (Test-Path $kqlPath)) { throw "Query file not found: $kqlPath" }
-$query = Get-Content -Path $kqlPath -Raw
-$query = $query -replace '\r?\n', ' ' -replace '\s{2,}', ' '
+if (-not (Test-Path $templatePath)) { throw "Template file not found: $templatePath" }
 
-$payload = @{ Query = $query } | ConvertTo-Json -Compress
-$result  = Invoke-RestMethod -Method Post -Uri 'https://api.securitycenter.microsoft.com/api/advancedqueries/run' -Headers $headers -Body $payload
+# Auth
+$headers = Get-MDATPAuthHeader -TenantId $tenantId -ClientId $clientId -SecretPath $secretPath -ApiBase $apiBase
+
+# Load/flatten KQL
+$query = Get-Content -Raw -Path $kqlPath
+$query = $query -replace '(?m)^\s*//.*$','' -replace '\r?\n',' ' -replace '\s{2,}',' '
+$query = $query.Trim()
+
+# Run + render
+$result = Invoke-E8Query -Query $query -Headers $headers -ApiRoot $apiBase
 
 if ($result.Results.Count) {
     $htmlTable = $result.Results | Select-Object DeviceName, OSPlatform, LastSeen, VulnerabilityCount, ExploitAvailable, @{Name='CVEs';Expression={ ($_.CVEList -join ', ') }} | ConvertTo-Html -Fragment | Out-String
-    $templatePath = Join-Path $PSScriptRoot 'E8-ML1-PA-07-PDF_message.html'
     if (-not (Test-Path $templatePath)) { throw "Template file not found: $templatePath" }
     $template = Get-Content -Path $templatePath -Raw
     #Send email

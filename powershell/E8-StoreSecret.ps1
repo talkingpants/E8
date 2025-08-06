@@ -1,20 +1,49 @@
 <#
-  One-time setup: run **on the target server**.
-  Keeps the key bound to the server’s machine key; stealing the file alone isn’t enough to decrypt it.
-  Prompts for the client secret from the Entra ID app registration and
-  stores it encrypted (DPAPI – LocalMachine scope) at C:\SECRET\defender.secret.
+  One-time setup: run on the target server.
+  Prompts for the Entra ID app client secret and stores it encrypted
+  with DPAPI (LocalMachine scope) at C:\SECRET\defender.secret.
 #>
 
 $secretPath = 'C:\SECRET\defender.secret'
-New-Item -ItemType Directory -Path (Split-Path $secretPath) -Force | Out-Null
 
+# Try to load the ProtectedData type (works across PS 5.1 and PS 7)
+try {
+    # First try the specific assembly (PS 7), then the legacy umbrella (PS 5.1)
+    Add-Type -AssemblyName System.Security.Cryptography.ProtectedData -ErrorAction Stop
+} catch {
+    try {
+        Add-Type -AssemblyName System.Security -ErrorAction Stop
+    } catch {
+        throw "Cannot load System.Security.Cryptography.ProtectedData. Check your PowerShell/.NET install on this host."
+    }
+}
+
+# Create folder
+$null = New-Item -ItemType Directory -Path (Split-Path -Path $secretPath) -Force
+
+# Prompt
 $secure = Read-Host -Prompt 'Enter Defender Client Secret' -AsSecureString
-$plain  = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR(
-            [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure))
-$bytes  = [Text.Encoding]::UTF8.GetBytes($plain)
+if (-not $secure) { throw 'No secret entered.' }
 
-$encrypted = [Security.Cryptography.ProtectedData]::Protect(
-               $bytes, $null, 'LocalMachine')
+# Convert SecureString -> bytes (and zero the BSTR afterwards)
+$bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+try {
+    $plain = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+} finally {
+    [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+}
+
+# UTF8 bytes
+$bytes = [Text.Encoding]::UTF8.GetBytes($plain)
+
+# Encrypt with DPAPI (machine scope)
+$encrypted = [System.Security.Cryptography.ProtectedData]::Protect(
+    $bytes,
+    $null,
+    [System.Security.Cryptography.DataProtectionScope]::LocalMachine
+)
+
+# Write to disk
 [IO.File]::WriteAllBytes($secretPath, $encrypted)
 
 Write-Host "Encrypted secret written to $secretPath"

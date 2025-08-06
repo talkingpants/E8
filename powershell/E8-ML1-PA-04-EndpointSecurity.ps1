@@ -1,19 +1,26 @@
 ﻿# E8-ML1-PA-04-EndpointSecurity.ps1
-
+# Imports
 . (Join-Path $PSScriptRoot 'E8-config.ps1')
-. (Join-Path $PSScriptRoot 'E8-Defender_auth.ps1')
+Import-Module (Join-Path $PSScriptRoot 'E8-Defender_auth.psm1')
+Import-Module (Join-Path $PSScriptRoot 'E8-Common.psm1')
 
-$headers = Get-MDATPAuthHeader -TenantId $tenantId -ClientId $clientId -ClientSecret $secret
-
-$kqlPath = Join-Path $PSScriptRoot 'E8-ML1-PA-04-EndpointSecurity_query.kql'
+# Resolve sibling dirs
+$paths = Get-E8Paths -ScriptRoot $PSScriptRoot
+$kqlPath = Join-Path $paths.KqlDir 'E8-ML1-PA-04-EndpointSecurity_query.kql'
+$templatePath = Join-Path $paths.MsgDir 'E8-ML1-PA-04-EndpointSecurity_message.html'
 if (-not (Test-Path $kqlPath)) { throw "Query file not found: $kqlPath" }
-$query  = Get-Content -Raw -Path $kqlPath
-$query  = $query -replace '(?m)//.*$',''   # strip any // comments if present
-$query  = $query -replace '\r?\n',' '      # flatten newlines
-$query  = $query -replace '\s{2,}',' '     # squeeze spaces
-$payload = @{ Query = $query.Trim() } | ConvertTo-Json -Compress
+if (-not (Test-Path $templatePath)) { throw "Template file not found: $templatePath" }
 
-$result  = Invoke-RestMethod -Method Post -Uri 'https://api.securitycenter.microsoft.com/api/advancedqueries/run' -Headers $headers -Body $payload
+# Auth
+$headers = Get-MDATPAuthHeader -TenantId $tenantId -ClientId $clientId -SecretPath $secretPath -ApiBase $apiBase
+
+# Load/flatten KQL
+$query = Get-Content -Raw -Path $kqlPath
+$query = $query -replace '(?m)^\s*//.*$','' -replace '\r?\n',' ' -replace '\s{2,}',' '
+$query = $query.Trim()
+
+# Run + render
+$result = Invoke-E8Query -Query $query -Headers $headers -ApiRoot $apiBase
 
 if ($result.Results.Count) {
     $htmlTable = $result.Results |
@@ -35,7 +42,6 @@ else {
     $htmlTable = "<p>No devices with Endpoint Security issues found. GOOD BOY!</p>"
 }
 
-$templatePath = Join-Path $PSScriptRoot 'E8-ML1-PA-04-EndpointSecurity_message.html'
 if (-not (Test-Path $templatePath)) { throw "Template file not found: $templatePath" }
 $template = Get-Content -Path $templatePath -Raw
 

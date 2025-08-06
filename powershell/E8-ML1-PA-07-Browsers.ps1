@@ -1,28 +1,26 @@
 ﻿# E8-ML1-PA-07-Browsers.ps1
-
-# Load config and authentication helpers
+# Imports
 . (Join-Path $PSScriptRoot 'E8-config.ps1')
-. (Join-Path $PSScriptRoot 'E8-Defender_auth.ps1')
+Import-Module (Join-Path $PSScriptRoot 'E8-Defender_auth.psm1')
+Import-Module (Join-Path $PSScriptRoot 'E8-Common.psm1')
 
-# Get Authorization header
-$headers = Get-MDATPAuthHeader -TenantId $tenantId -ClientId $clientId -ClientSecret $secret
+# Resolve sibling dirs
+$paths = Get-E8Paths -ScriptRoot $PSScriptRoot
+$kqlPath = Join-Path $paths.KqlDir 'E8-ML1-PA-07-Browser_query.kql'
+$templatePath = Join-Path $paths.MsgDir 'E8-ML1-PA-07-Browser_message.html'
+if (-not (Test-Path $kqlPath)) { throw "Query file not found: $kqlPath" }
+if (-not (Test-Path $templatePath)) { throw "Template file not found: $templatePath" }
 
-# Load & sanitize the KQL
-$kqlPath = Join-Path $PSScriptRoot 'E8-ML1-PA-07-Browser_query.kql'
-if (-not (Test-Path $kqlPath)) {
-    throw "Query file not found: $kqlPath"
-}
-$query = Get-Content -Path $kqlPath -Raw
-$query = $query -replace '\r?\n', ' ' -replace '\s{2,}', ' '
+# Auth
+$headers = Get-MDATPAuthHeader -TenantId $tenantId -ClientId $clientId -SecretPath $secretPath -ApiBase $apiBase
 
-# Execute the query
-$payload = @{ Query = $query } | ConvertTo-Json -Compress
-$result = Invoke-RestMethod `
-    -Method Post `
-    -Uri 'https://api.securitycenter.microsoft.com/api/advancedqueries/run' `
-    -Headers $headers `
-    -Body $payload
+# Load/flatten KQL
+$query = Get-Content -Raw -Path $kqlPath
+$query = $query -replace '(?m)^\s*//.*$','' -replace '\r?\n',' ' -replace '\s{2,}',' '
+$query = $query.Trim()
 
+# Run + render
+$result = Invoke-E8Query -Query $query -Headers $headers -ApiRoot $apiBase
 # Build the HTML table
 if ($result.Results.Count) {
     $htmlTable = $result.Results |
@@ -35,7 +33,6 @@ if ($result.Results.Count) {
     ConvertTo-Html -Fragment | Out-String
     
     # Inject into the HTML template
-    $templatePath = Join-Path $PSScriptRoot 'E8-ML1-PA-07-Browser_message.html'
     if (-not (Test-Path $templatePath)) {
         throw "Template file not found: $templatePath"
     }
