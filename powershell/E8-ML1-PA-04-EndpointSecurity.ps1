@@ -42,7 +42,6 @@ else {
     $htmlTable = "<p>No devices with Endpoint Security issues found. GOOD BOY!</p>"
 }
 
-if (-not (Test-Path $templatePath)) { throw "Template file not found: $templatePath" }
 $template = Get-Content -Path $templatePath -Raw
 
 $stamp    = (Get-Date).ToString('yyyy-MM-dd')
@@ -50,3 +49,4 @@ $bodyHtml = $template -replace '<!--REPORT_TABLE-->', $htmlTable -replace '<!--S
 
 $subject = "E8-ML1-PA-04 EndpointSecurity Vuln Report - $stamp @@@"
 Send-MailMessage -To $mailTo -From $mailFrom -Subject $subject -Body $bodyHtml -BodyAsHtml -SmtpServer $smtp
+
