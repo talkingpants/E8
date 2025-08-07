@@ -16,9 +16,20 @@ Scripts and templates for generating Essential Eight (E8) compliance reports usi
 
 ## Setup
 
-1. Customize `powershell/E8-config.ps1` with your tenant ID, client ID, secret path, API base, and mail settings.
-2. Run `powershell/E8-StoreSecret.ps1` once to encrypt and store the Defender app client secret using DPAPI.
-3. Confirm the host has network access to the Defender APIs and Microsoft Graph.
+1. [Prepare Microsoft Entra ID and Defender](#entra-and-defender-setup) by registering an app with the required API permissions.
+2. Customize `powershell/E8-config.ps1` with your tenant ID, client ID, secret path, API base, and mail settings.
+3. Run `powershell/E8-StoreSecret.ps1` once to encrypt and store the Defender app client secret using DPAPI.
+4. Confirm the host has network access to the Defender APIs and Microsoft Graph.
+
+## Entra and Defender setup
+
+1. In the Microsoft Entra admin center, register a new application for these reports.
+2. Under **API permissions**, add application permissions and grant admin consent for:
+   - **Microsoft Graph** → `Mail.Send`
+   - **Microsoft Threat Protection** → `AdvancedHunting.Read.All`
+3. Create a client secret and record the secret value, client ID, and tenant ID.
+4. Ensure the organization has Microsoft Defender enabled and licensed for Advanced Hunting queries.
+5. Run `powershell/E8-StoreSecret.ps1` to encrypt the client secret at the path referenced in `E8-config.ps1`.
 
 ## Usage
 
