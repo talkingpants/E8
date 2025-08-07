@@ -37,7 +37,17 @@ if ($result.Results.Count -gt 0) {
     # send email only when there are results (your change was correct)
     $stamp   = (Get-Date).ToString('yyyy-MM-dd')
     $bodyHtml = $template -replace '<!--REPORT_TABLE-->', $htmlTable -replace '<!--STAMP-->', $stamp
-    Send-MailMessage -To $mailTo -From $mailFrom -Subject "E8-ML1-PA-08 Internet-facing EOS applications - $stamp @@@" -Body $bodyHtml -BodyAsHtml -SmtpServer $smtp
+    $subject = "E8-ML1-PA-08 Internet-facing EOS applications - $stamp @@@"
+
+    $mail = New-Object System.Net.Mail.MailMessage
+    $mail.From = $mailFrom
+    $mailTo | ForEach-Object { $mail.To.Add($_) }
+    $mail.Subject = $subject
+    $mail.Body = $bodyHtml
+    $mail.IsBodyHtml = $true
+
+    $smtpClient = New-Object System.Net.Mail.SmtpClient($smtp)
+    $smtpClient.Send($mail)
 }
 else {
     Throw 'No findings. Email not sent.'

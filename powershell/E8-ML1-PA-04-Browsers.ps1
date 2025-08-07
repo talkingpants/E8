@@ -41,4 +41,13 @@ $bodyHtml = $template -replace '<!--REPORT_TABLE-->', $htmlTable -replace '<!--S
 
 # Send the report
 $subject = "E8-ML1-PA-04 Browser Vulnerability Report - $stamp @@@"
-Send-MailMessage -To $mailTo -From $mailFrom -Subject $subject -Body $bodyHtml -BodyAsHtml -SmtpServer $smtp
+
+$mail = New-Object System.Net.Mail.MailMessage
+$mail.From = $mailFrom
+$mailTo | ForEach-Object { $mail.To.Add($_) }
+$mail.Subject = $subject
+$mail.Body = $bodyHtml
+$mail.IsBodyHtml = $true
+
+$smtpClient = New-Object System.Net.Mail.SmtpClient($smtp)
+$smtpClient.Send($mail)
