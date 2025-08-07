@@ -49,4 +49,12 @@ $bodyHtml = $template -replace '<!--REPORT_TABLE-->',$htmlTable -replace '<!--ST
 
 $subject = "E8-ML1-PO-06 Patch Operating Systems - $stamp @@@"
 
-Send-MailMessage -To $mailTo -From $mailFrom -Subject $subject -Body $bodyHtml -BodyAsHtml -SmtpServer $smtp
+$mail = New-Object System.Net.Mail.MailMessage
+$mail.From = $mailFrom
+$mailTo | ForEach-Object { $mail.To.Add($_) }
+$mail.Subject = $subject
+$mail.Body = $bodyHtml
+$mail.IsBodyHtml = $true
+
+$smtpClient = New-Object System.Net.Mail.SmtpClient($smtp)
+$smtpClient.Send($mail)

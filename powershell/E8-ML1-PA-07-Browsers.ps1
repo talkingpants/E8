@@ -44,7 +44,16 @@ if ($result.Results.Count) {
 
     # Send the report
     $subject = "E8-ML1-PA-07 Browser Vulnerabilities older than 14d - $stamp @@@"
-    Send-MailMessage -To $mailTo -From $mailFrom -Subject $subject -Body $bodyHtml -BodyAsHtml -SmtpServer $smtp
+
+    $mail = New-Object System.Net.Mail.MailMessage
+    $mail.From = $mailFrom
+    $mailTo | ForEach-Object { $mail.To.Add($_) }
+    $mail.Subject = $subject
+    $mail.Body = $bodyHtml
+    $mail.IsBodyHtml = $true
+
+    $smtpClient = New-Object System.Net.Mail.SmtpClient($smtp)
+    $smtpClient.Send($mail)
 }
 else {
     throw "No devices with Browser vulnerabilities found."
