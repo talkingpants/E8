@@ -60,7 +60,7 @@ function Send-E8ExchangeOnlineMail {
         [Parameter(Mandatory)][string[]]$To,
         [Parameter(Mandatory)][string]$Subject,
         [Parameter(Mandatory)][string]$BodyHtml,
-        [string]$SecretPath = 'C:\\SECRET\\defender.secret'
+        [string]$SecretPath = 'C:\SECRET\defender.secret'
     )
 
     $headers = Get-E8GraphAuthHeader -TenantId $TenantId -ClientId $ClientId -SecretPath $SecretPath

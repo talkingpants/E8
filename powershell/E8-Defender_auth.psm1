@@ -60,7 +60,7 @@ function Get-E8GraphAuthHeader {
     param(
         [Parameter(Mandatory)][string]$TenantId,
         [Parameter(Mandatory)][string]$ClientId,
-        [string]$SecretPath = 'C:\\SECRET\\defender.secret'
+        [string]$SecretPath = 'C:\SECRET\defender.secret'
     )
 
     $clientSecret = Get-E8ClientSecret -Path $SecretPath
