@@ -2,6 +2,7 @@
   Exports:
     Get-E8ClientSecret - decrypts the secret from file.
     Get-MDATPAuthHeader - returns a bearer-token header for Defender APIs.
+    Get-E8GraphAuthHeader - returns a bearer-token header for Microsoft Graph.
 #>
 
 function Get-E8ClientSecret {
@@ -49,4 +50,28 @@ function Get-MDATPAuthHeader {
     @{ Authorization = "Bearer $token"; 'Content-Type' = 'application/json' }
 }
 
-Export-ModuleMember -Function Get-E8ClientSecret,Get-MDATPAuthHeader
+function Get-E8GraphAuthHeader {
+    <#
+      .SYNOPSIS  Get a Hashtable with Authorization and Content-Type headers for Microsoft Graph.
+      .PARAMETER TenantId   Entra ID tenant GUID.
+      .PARAMETER ClientId   App registration ID.
+      .PARAMETER SecretPath Path to DPAPI-protected secret blob.
+    #>
+    param(
+        [Parameter(Mandatory)][string]$TenantId,
+        [Parameter(Mandatory)][string]$ClientId,
+        [string]$SecretPath = 'C:\\SECRET\\defender.secret'
+    )
+
+    $clientSecret = Get-E8ClientSecret -Path $SecretPath
+    $scope        = 'https%3A%2F%2Fgraph.microsoft.com%2F.default'
+    $body         = "client_id=$ClientId&scope=$scope&client_secret=$clientSecret&grant_type=client_credentials"
+
+    $token = (Invoke-RestMethod -Method Post `
+                -Uri "https://login.microsoftonline.com/$TenantId/oauth2/v2.0/token" `
+                -Body $body -ContentType 'application/x-www-form-urlencoded').access_token
+
+    @{ Authorization = "Bearer $token"; 'Content-Type' = 'application/json' }
+}
+
+Export-ModuleMember -Function Get-E8ClientSecret,Get-MDATPAuthHeader,Get-E8GraphAuthHeader
