@@ -19,8 +19,7 @@ function Get-E8ClientSecret {
     }
 
     $enc  = [IO.File]::ReadAllBytes($Path)
-    $plainBytes = [Security.Cryptography.ProtectedData]::Unprotect(
-                    $enc, $null, 'LocalMachine')
+    $plainBytes = [Security.Cryptography.ProtectedData]::Unprotect($enc, $null, 'LocalMachine')
     [Text.Encoding]::UTF8.GetString($plainBytes)
 }
 
@@ -73,5 +72,6 @@ function Get-E8GraphAuthHeader {
 
     @{ Authorization = "Bearer $token"; 'Content-Type' = 'application/json' }
 }
+
 
 Export-ModuleMember -Function Get-E8ClientSecret,Get-MDATPAuthHeader,Get-E8GraphAuthHeader
