@@ -5,6 +5,8 @@
     Get-E8GraphAuthHeader - returns a bearer-token header for Microsoft Graph.
 #>
 
+Add-Type -AssemblyName System.Security
+
 function Get-E8ClientSecret {
     <#
       .SYNOPSIS  Decrypt the DPAPI-protected secret.
@@ -19,7 +21,7 @@ function Get-E8ClientSecret {
     }
 
     $enc  = [IO.File]::ReadAllBytes($Path)
-    $plainBytes = [Security.Cryptography.ProtectedData]::Unprotect($enc, $null, 'LocalMachine')
+    $plainBytes = [System.Security.Cryptography.ProtectedData]::Unprotect($enc, $null, 'LocalMachine')
     [Text.Encoding]::UTF8.GetString($plainBytes)
 }
 
