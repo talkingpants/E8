@@ -1,4 +1,4 @@
-﻿<#
+<#
   Common helpers shared by all PA scripts.
   - Get-E8Paths      : resolve base/kql/message dirs from a script under E8\powershell
   - Invoke-E8Query   : call Defender Advanced Hunting with readable error output
@@ -51,7 +51,6 @@ function Send-E8ExchangeOnlineMail {
       .PARAMETER To         Recipient email addresses.
       .PARAMETER Subject    Email subject.
       .PARAMETER BodyHtml   HTML body content.
-      .PARAMETER SecretPath Path to DPAPI-protected secret blob.
     #>
     param(
         [Parameter(Mandatory)][string]$TenantId,
@@ -59,15 +58,14 @@ function Send-E8ExchangeOnlineMail {
         [Parameter(Mandatory)][string]$From,
         [Parameter(Mandatory)][string[]]$To,
         [Parameter(Mandatory)][string]$Subject,
-        [Parameter(Mandatory)][string]$BodyHtml,
-        [string]$SecretPath = 'C:\SECRET\defender.secret'
+        [Parameter(Mandatory)][string]$BodyHtml
     )
 
-    $headers = Get-E8GraphAuthHeader -TenantId $TenantId -ClientId $ClientId -SecretPath $SecretPath
+    $headers = Get-E8GraphAuthHeader -TenantId $TenantId -ClientId $ClientId
     $uri     = "https://graph.microsoft.com/v1.0/users/$From/sendMail"
 
-    $payload = @{ 
-        Message = @{ 
+    $payload = @{
+        Message = @{
             Subject = $Subject
             Body    = @{ ContentType = 'HTML'; Content = $BodyHtml }
             ToRecipients = $To | ForEach-Object { @{ EmailAddress = @{ Address = $_ } } }

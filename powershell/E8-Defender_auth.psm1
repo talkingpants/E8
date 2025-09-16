@@ -1,6 +1,6 @@
 <#
   Exports:
-    Get-E8ClientSecret - decrypts the secret from file.
+    Get-E8ClientSecret - decrypts the secret from the registry.
     Get-MDATPAuthHeader - returns a bearer-token header for Defender APIs.
     Get-E8GraphAuthHeader - returns a bearer-token header for Microsoft Graph.
 #>
@@ -9,18 +9,17 @@ Add-Type -AssemblyName System.Security
 
 function Get-E8ClientSecret {
     <#
-      .SYNOPSIS  Decrypt the DPAPI-protected secret.
-      .PARAMETER Path  Path to the encrypted blob.
+      .SYNOPSIS  Decrypt the DPAPI-protected secret stored in the registry.
     #>
-    param(
-        [string]$Path = 'C:\SECRET\defender.secret'
-    )
 
-    if (-not (Test-Path $Path)) {
-        throw "Secret file not found: $Path"
+    $regPath   = 'HKCU:\Software\E8'
+    $valueName = 'ClientSecret'
+
+    if (-not (Test-Path $regPath)) {
+        throw "Registry path not found: $regPath"
     }
 
-    $enc  = [IO.File]::ReadAllBytes($Path)
+    $enc = (Get-ItemProperty -Path $regPath -Name $valueName -ErrorAction Stop).$valueName
     $plainBytes = [System.Security.Cryptography.ProtectedData]::Unprotect($enc, $null, 'LocalMachine')
     [Text.Encoding]::UTF8.GetString($plainBytes)
 }
@@ -30,17 +29,15 @@ function Get-MDATPAuthHeader {
       .SYNOPSIS  Get a Hashtable with Authorization and Content-Type headers.
       .PARAMETER TenantId       Entra ID tenant GUID.
       .PARAMETER ClientId       App registration ID.
-      .PARAMETER SecretPath     Path to DPAPI-protected secret blob.
       .PARAMETER ApiBase        Defender API root (optional – default $apiBase if defined).
     #>
     param(
         [Parameter(Mandatory)][string]$TenantId,
         [Parameter(Mandatory)][string]$ClientId,
-        [string]$SecretPath = 'C:\SECRET\defender.secret',
         [string]$ApiBase
     )
 
-    $clientSecret = Get-E8ClientSecret -Path $SecretPath
+    $clientSecret = Get-E8ClientSecret
     $scope        = 'https%3A%2F%2Fapi.securitycenter.microsoft.com%2F.default'
     $body         = "client_id=$ClientId&scope=$scope&client_secret=$clientSecret&grant_type=client_credentials"
 
@@ -56,15 +53,13 @@ function Get-E8GraphAuthHeader {
       .SYNOPSIS  Get a Hashtable with Authorization and Content-Type headers for Microsoft Graph.
       .PARAMETER TenantId   Entra ID tenant GUID.
       .PARAMETER ClientId   App registration ID.
-      .PARAMETER SecretPath Path to DPAPI-protected secret blob.
     #>
     param(
         [Parameter(Mandatory)][string]$TenantId,
-        [Parameter(Mandatory)][string]$ClientId,
-        [string]$SecretPath = 'C:\SECRET\defender.secret'
+        [Parameter(Mandatory)][string]$ClientId
     )
 
-    $clientSecret = Get-E8ClientSecret -Path $SecretPath
+    $clientSecret = Get-E8ClientSecret
     $scope        = 'https%3A%2F%2Fgraph.microsoft.com%2F.default'
     $body         = "client_id=$ClientId&scope=$scope&client_secret=$clientSecret&grant_type=client_credentials"
 
@@ -74,6 +69,5 @@ function Get-E8GraphAuthHeader {
 
     @{ Authorization = "Bearer $token"; 'Content-Type' = 'application/json' }
 }
-
 
 Export-ModuleMember -Function Get-E8ClientSecret,Get-MDATPAuthHeader,Get-E8GraphAuthHeader

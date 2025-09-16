@@ -14,7 +14,7 @@ if (-not (Test-Path $kqlPath))     { throw "Query file not found: $kqlPath" }
 if (-not (Test-Path $templatePath)){ throw "Template file not found: $templatePath" }
 
 # Auth
-$headers = Get-MDATPAuthHeader -TenantId $tenantId -ClientId $clientId -SecretPath $secretPath -ApiBase $apiBase
+$headers = Get-MDATPAuthHeader -TenantId $tenantId -ClientId $clientId -ApiBase $apiBase
 
 # KQL (strip comments + flatten)
 $query = Get-Content -Raw -Path $kqlPath
