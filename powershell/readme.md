@@ -8,17 +8,15 @@
 3. Create a client secret for each app.
 
 ## Configure `E8-config.ps1`
-1. Update tenant ID, client ID, and secret path for the Defender app:
+1. Update tenant ID and client ID for the Defender app:
    - `$tenantId`
    - `$clientId`
-   - `$secretPath`
 2. Set mail sender and recipients:
    - `$mailFrom`
    - `$mailTo`
 3. If a separate Graph app is used, also configure:
    - `$graphTenantId`
    - `$graphClientId`
-   - `$graphSecretPath`
-4. Run `E8-StoreSecret.ps1` once for each secret path to encrypt the client secret.
+4. Run `E8-StoreSecret.ps1` once to encrypt the client secret in the current user's `HKCU\Software\E8` registry key.
 
 After configuration, execute the desired report scripts from this directory.

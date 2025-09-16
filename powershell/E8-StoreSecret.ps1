@@ -1,10 +1,11 @@
 <#
   One-time setup: run on the target server.
   Prompts for the Entra ID app client secret and stores it encrypted
-  with DPAPI (LocalMachine scope) at C:\SECRET\defender.secret.
+  with DPAPI (LocalMachine scope) under HKCU:\Software\E8.
 #>
 
-$secretPath = 'C:\SECRET\defender.secret'
+$regPath   = 'HKCU:\Software\E8'
+$valueName = 'ClientSecret'
 
 # Try to load the ProtectedData type (works across PS 5.1 and PS 7)
 try {
@@ -18,8 +19,8 @@ try {
     }
 }
 
-# Create folder
-$null = New-Item -ItemType Directory -Path (Split-Path -Path $secretPath) -Force
+# Create registry key
+$null = New-Item -Path $regPath -Force
 
 # Prompt
 $secure = Read-Host -Prompt 'Enter Defender Client Secret' -AsSecureString
@@ -43,7 +44,7 @@ $encrypted = [System.Security.Cryptography.ProtectedData]::Protect(
     [System.Security.Cryptography.DataProtectionScope]::LocalMachine
 )
 
-# Write to disk
-[IO.File]::WriteAllBytes($secretPath, $encrypted)
+# Write to registry
+Set-ItemProperty -Path $regPath -Name $valueName -Value $encrypted
 
-Write-Host "Encrypted secret written to $secretPath"
+Write-Host "Encrypted secret written to $regPath\$valueName"
